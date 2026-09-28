@@ -8,6 +8,11 @@
     <title>TOEIC 450 · 50 ngày học</title>
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%23112d46'/%3E%3Cpath d='M19 17h27v8H28v7h16v8H28v7h18v8H19z' fill='%23ffffff'/%3E%3Ccircle cx='49' cy='14' r='6' fill='%23ffc56b'/%3E%3C/svg%3E" />
     <link rel="stylesheet" href="./styles.css" />
+    <script defer src="https://www.gstatic.com/firebasejs/12.19.0/firebase-app-compat.js"></script>
+    <script defer src="https://www.gstatic.com/firebasejs/12.19.0/firebase-auth-compat.js"></script>
+    <script defer src="https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore-compat.js"></script>
+    <script defer src="./firebase-config.js"></script>
+    <script defer src="./firebase-sync.js"></script>
     <script src="./data/course-data.js" defer></script>
     <script src="./app.js" defer></script>
   </head>
@@ -28,6 +33,10 @@
             <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8" stroke="currentColor" stroke-width="1.8"/><path d="m16 16 4.5 4.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
             <span>Tìm từ vựng</span><kbd>/</kbd>
           </button>
+          <div class="sync-controls" aria-live="polite">
+            <span id="syncStatus" class="sync-status">Chỉ lưu trên thiết bị này</span>
+            <button id="syncButton" class="header-button sync-button" type="button">Đăng nhập đồng bộ</button>
+          </div>
           <div class="header-progress" aria-label="Tiến độ toàn khóa">
             <strong id="globalProgress">0 / 1.000</strong>
             <small>từ đã học</small>

@@ -18,6 +18,7 @@
     dialogMeaning: el("dialogMeaning"), dialogExamples: el("dialogExamples"),
     dialogLearned: el("dialogLearned"), dialogBookmark: el("dialogBookmark"),
     dialogGoArticle: el("dialogGoArticle"), toast: el("toast"),
+    syncButton: el("syncButton"), syncStatus: el("syncStatus"),
   };
 
   const stored = readStorage();
@@ -31,6 +32,11 @@
     translations: new Set(), reviewRevealed: new Set(), quizSelections: {}, quizChecked: new Set(),
   };
   let toastTimer = null;
+  let syncEnabled = false;
+  let syncApplying = false;
+  let syncTimer = null;
+  let stopProgressWatch = null;
+  let signedInUser = null;
 
   function readStorage() {
     try {
@@ -39,13 +45,78 @@
     } catch (_) { return {}; }
   }
 
+  function progressSnapshot() {
+    return {
+      selectedDay: state.selectedDay, learned: [...state.learned],
+      bookmarks: [...state.bookmarks], readArticles: [...state.readArticles],
+    };
+  }
+
   function saveProgress() {
+    const progress = progressSnapshot();
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({
-        selectedDay: state.selectedDay, learned: [...state.learned],
-        bookmarks: [...state.bookmarks], readArticles: [...state.readArticles],
-      }));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(progress));
     } catch (_) { showToast("Không lưu được tiến độ trên thiết bị này."); }
+    if (syncEnabled && !syncApplying) {
+      clearTimeout(syncTimer);
+      syncTimer = setTimeout(() => {
+        window.ColearnFirebase.saveProgress(progress).then(() => {
+          setSyncStatus(`Đã đồng bộ · ${window.ColearnFirebase.currentUserEmail || "Google"}`);
+        }).catch((error) => setSyncStatus(`Lỗi đồng bộ: ${error.message || "hãy thử lại"}`));
+      }, 300);
+    }
+  }
+
+  function setSyncStatus(message) {
+    refs.syncStatus.textContent = message;
+  }
+
+  function applyCloudProgress(cloud, merge) {
+    if (!cloud || typeof cloud !== "object") return;
+    const asIds = (value) => Array.isArray(value) ? value.map(key) : [];
+    const combine = (local, remote) => merge ? [...new Set([...local, ...remote])] : remote;
+    const remoteDay = validDay(cloud.selectedDay);
+    state.selectedDay = dayFromHash() || (merge ? Math.max(state.selectedDay, remoteDay || 1) : remoteDay || state.selectedDay);
+    state.learned = new Set(combine([...state.learned], asIds(cloud.learned)).filter((id) => state.wordsById.has(id)));
+    state.bookmarks = new Set(combine([...state.bookmarks], asIds(cloud.bookmarks)).filter((id) => state.wordsById.has(id)));
+    state.readArticles = new Set(combine([...state.readArticles], asIds(cloud.readArticles)).filter((id) => state.articlesById.has(id)));
+    syncApplying = true;
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(progressSnapshot())); }
+    catch (_) { showToast("Không lưu được tiến độ trên thiết bị này."); }
+    renderEverything();
+    syncApplying = false;
+  }
+
+  async function handleFirebaseUser(user) {
+    signedInUser = user;
+    syncEnabled = false;
+    clearTimeout(syncTimer);
+    if (stopProgressWatch) { stopProgressWatch(); stopProgressWatch = null; }
+    if (!user) {
+      refs.syncButton.textContent = "Đăng nhập đồng bộ";
+      refs.syncButton.title = "Đăng nhập bằng Google để đồng bộ tiến độ giữa các thiết bị";
+      setSyncStatus(window.ColearnFirebase?.isConfigured ? "Chỉ lưu trên thiết bị này" : "Đồng bộ chưa thiết lập");
+      return;
+    }
+    refs.syncButton.textContent = "Đăng xuất";
+    refs.syncButton.title = `Đang đồng bộ cho ${user.email || "tài khoản Google"}`;
+    setSyncStatus("Đang tải tiến độ…");
+    try {
+      const cloud = await window.ColearnFirebase.loadProgress();
+      if (cloud) {
+        applyCloudProgress(cloud, true);
+        await window.ColearnFirebase.saveProgress(progressSnapshot());
+      } else {
+        await window.ColearnFirebase.saveProgress(progressSnapshot());
+      }
+      syncEnabled = true;
+      setSyncStatus(`Đã đồng bộ · ${user.email || "Google"}`);
+      stopProgressWatch = window.ColearnFirebase.watchProgress((progress) => {
+        if (syncEnabled) applyCloudProgress(progress, false);
+      }, (error) => setSyncStatus(`Lỗi đồng bộ: ${error.message || "hãy thử lại"}`));
+    } catch (error) {
+      setSyncStatus(`Lỗi Firebase: ${error.message || "kiểm tra cấu hình"}`);
+    }
   }
 
   function validDay(value) {
@@ -639,6 +710,30 @@
     renderLookup();
   });
   el("retryButton").addEventListener("click", loadCourse);
+  refs.syncButton.addEventListener("click", async () => {
+    if (!window.ColearnFirebase?.isConfigured) {
+      setSyncStatus("Hãy xem mục Firebase trong HUONG_DAN.md");
+      showToast("Cần tạo Firebase project và điền cấu hình Web trước.");
+      return;
+    }
+    refs.syncButton.disabled = true;
+    try {
+      if (signedInUser) await window.ColearnFirebase.signOut();
+      else await window.ColearnFirebase.signIn();
+    } catch (error) {
+      setSyncStatus(`Đăng nhập lỗi: ${error.message || "hãy thử lại"}`);
+    } finally {
+      refs.syncButton.disabled = false;
+    }
+  });
+  if (window.ColearnFirebase?.isConfigured) {
+    try { window.ColearnFirebase.initialize(handleFirebaseUser); }
+    catch (error) { setSyncStatus(`Firebase chưa sẵn sàng: ${error.message}`); }
+  } else {
+    refs.syncButton.textContent = "Thiết lập Firebase";
+    refs.syncButton.title = "Xem hướng dẫn cấu hình Firebase trong HUONG_DAN.md";
+    setSyncStatus("Đồng bộ chưa thiết lập");
+  }
   document.querySelector(".brand").addEventListener("click", (event) => {
     event.preventDefault();
     closeLookup();

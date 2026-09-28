@@ -51,6 +51,43 @@ CoLearn/
 
 Trang tĩnh không cần máy chủ ứng dụng riêng. Tuy nhiên, ai có URL đều có thể truy cập; không tải lên thông tin cá nhân hoặc dữ liệu cần bảo mật.
 
+## Đồng bộ tiến độ bằng Firebase
+
+Ứng dụng vẫn lưu cục bộ nếu chưa cấu hình Firebase. Khi đã cấu hình, đăng nhập Google trên các thiết bị bằng cùng một tài khoản để đồng bộ ngày đang học, từ đã học, từ đã lưu và bài đọc đã hoàn thành.
+
+### 1. Tạo Firebase project và Web app
+
+1. Mở [Firebase Console](https://console.firebase.google.com/) và tạo project mới.
+2. Trong trang tổng quan project, thêm ứng dụng Web (`</>`), đặt tên tùy ý và đăng ký ứng dụng. Không cần bật Firebase Hosting.
+3. Mở **Project settings → General → Your apps → SDK setup and configuration**. Chọn cấu hình dạng `const firebaseConfig = { ... }`.
+4. Chép `apiKey`, `authDomain`, `projectId` và `appId` vào các trường tương ứng trong `firebase-config.js`. Đây là cấu hình dành cho trình duyệt; bảo vệ dữ liệu bằng Firestore Rules ở bước 3, không bằng cách giấu web config.
+
+### 2. Bật đăng nhập Google
+
+1. Firebase Console → **Authentication → Get started → Sign-in method**.
+2. Bật **Google** làm nhà cung cấp đăng nhập và lưu.
+3. Trong **Authentication → Settings → Authorized domains**, thêm `chungnb1work12.github.io`. Thêm `localhost` nếu chạy thử trên máy.
+
+### 3. Tạo Firestore và giới hạn quyền truy cập
+
+1. Firebase Console → **Firestore Database → Create database**. Chọn vị trí gần bạn; chế độ dữ liệu ban đầu có thể để khóa.
+2. Mở tab **Rules**, thay nội dung bằng tệp `firestore.rules` trong repository, rồi nhấn **Publish**. Quy tắc này chỉ cho tài khoản đã đăng nhập đọc/ghi tài liệu tiến độ của chính UID đó.
+3. Không dùng quy tắc mở toàn bộ database như `allow read, write: if true`.
+
+### 4. Đưa cấu hình lên website và dùng đồng bộ
+
+Trong thư mục dự án, sau khi điền `firebase-config.js`, chạy:
+
+```powershell
+git add firebase-config.js
+git commit -m "Configure Firebase sync"
+git push
+```
+
+Chờ GitHub Pages cập nhật, mở website, nhấn **Đăng nhập đồng bộ** và đăng nhập cùng tài khoản Google trên các thiết bị. Nếu Firebase báo thiếu quyền, kiểm tra lại Firestore Rules; nếu báo domain không được phép, thêm `chungnb1work12.github.io` vào Authorized domains.
+
+Lần đăng nhập đầu tiên sẽ gộp tiến độ cục bộ hiện tại với dữ liệu trên Firebase. Sau đó, các thao tác học, lưu từ và đánh dấu bài đọc sẽ đồng bộ. Nếu chưa điền cấu hình Firebase, nút trên trang sẽ nhắc mở hướng dẫn này và ứng dụng tiếp tục lưu trên thiết bị.
+
 ### Phương án B — website riêng tư
 
 Chọn nền tảng có xác thực/giới hạn người xem (chẳng hạn Sites ở chế độ private hoặc hosting có access control). Đưa thư mục web lên, đặt publish directory ở thư mục gốc và cấu hình chỉ tài khoản được phép mới xem. Với Sites, cần tài khoản chủ sở hữu đăng nhập, quyền truy cập kho nguồn và triển khai; giữ chế độ private khi deploy. Kiểm tra bằng tài khoản được cấp quyền và một cửa sổ chưa đăng nhập.
