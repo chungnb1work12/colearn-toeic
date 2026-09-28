@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#112d46" />
+    <meta name="description" content="Lộ trình TOEIC 450 trong 50 ngày: 1.000 từ vựng, 100 bài đọc, phát âm và ôn tập mỗi ngày." />
+    <title>TOEIC 450 · 50 ngày học</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%23112d46'/%3E%3Cpath d='M19 17h27v8H28v7h16v8H28v7h18v8H19z' fill='%23ffffff'/%3E%3Ccircle cx='49' cy='14' r='6' fill='%23ffc56b'/%3E%3C/svg%3E" />
+    <link rel="stylesheet" href="./styles.css" />
+    <script src="./data/course-data.js" defer></script>
+    <script src="./app.js" defer></script>
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="topbar-inner">
+        <a class="brand" href="#" aria-label="TOEIC 450, về ngày học">
+          <span class="brand-mark" aria-hidden="true">E<span></span></span>
+          <span class="brand-text"><strong>TOEIC 450</strong><small>50 ngày học tiếng Anh</small></span>
+        </a>
+
+        <div class="topbar-actions">
+          <button id="bookmarksButton" class="header-button" type="button" aria-label="Xem từ đã lưu">
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 4.5A1.5 1.5 0 0 1 7.5 3h9A1.5 1.5 0 0 1 18 4.5V21l-6-4-6 4V4.5Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
+            <span>Từ đã lưu</span><span id="bookmarkCount" class="header-count">0</span>
+          </button>
+          <button id="searchButton" class="header-button search-trigger" type="button" aria-label="Tìm từ vựng">
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8" stroke="currentColor" stroke-width="1.8"/><path d="m16 16 4.5 4.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+            <span>Tìm từ vựng</span><kbd>/</kbd>
+          </button>
+          <div class="header-progress" aria-label="Tiến độ toàn khóa">
+            <strong id="globalProgress">0 / 1.000</strong>
+            <small>từ đã học</small>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <div class="app-shell">
+      <aside class="sidebar" aria-label="Lộ trình học">
+        <div class="sidebar-head">
+          <div><span class="eyebrow">LỘ TRÌNH</span><h2>50 ngày</h2></div>
+          <span id="coursePercent" class="course-percent">0%</span>
+        </div>
+        <div class="course-bar" aria-hidden="true"><span id="courseBar"></span></div>
+        <p id="courseSummary" class="course-summary">0 / 100 bài đọc hoàn thành</p>
+        <div id="dayGroups" class="day-groups" aria-label="Chọn ngày học"></div>
+      </aside>
+
+      <main class="main-content" id="mainContent">
+        <div id="loadingState" class="state-panel" role="status">
+          <span class="loading-ring" aria-hidden="true"></span>
+          <p>Đang mở khóa học…</p>
+        </div>
+
+        <div id="errorState" class="state-panel hidden" role="alert">
+          <div class="state-symbol" aria-hidden="true">!</div>
+          <h1>Chưa tải được nội dung</h1>
+          <p id="errorMessage">Vui lòng thử lại sau ít phút.</p>
+          <button id="retryButton" class="primary-button" type="button">Tải lại</button>
+        </div>
+
+        <div id="learningView" class="hidden">
+          <div class="mobile-day-control">
+            <label for="mobileDaySelect">Chọn ngày học</label>
+            <select id="mobileDaySelect"></select>
+          </div>
+
+          <section class="day-overview" aria-labelledby="dayTitle">
+            <div class="day-heading">
+              <div>
+                <p class="eyebrow" id="dayEyebrow">NGÀY 01 / 50</p>
+                <h1 id="dayTitle">Ngày 01</h1>
+                <p id="dayTopics" class="day-topics"></p>
+              </div>
+              <div class="day-arrows" aria-label="Chuyển ngày">
+                <button id="previousDay" class="icon-button" type="button" aria-label="Ngày trước"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m14.5 5-7 7 7 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+                <button id="nextDay" class="icon-button" type="button" aria-label="Ngày tiếp theo"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m9.5 5 7 7-7 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+              </div>
+            </div>
+            <div class="daily-stats">
+              <span><strong>02</strong> bài đọc</span>
+              <span><strong>20</strong> từ mới</span>
+              <span id="dailyStatus"><strong>0 / 22</strong> đã hoàn thành</span>
+            </div>
+            <div class="daily-progress"><span id="dailyBar"></span></div>
+          </section>
+
+          <nav id="studyTabs" class="study-tabs" aria-label="Nội dung ngày học" role="tablist">
+            <button class="study-tab active" type="button" data-view="article" data-article-index="0" role="tab" aria-selected="true">Bài đọc 1</button>
+            <button class="study-tab" type="button" data-view="article" data-article-index="1" role="tab" aria-selected="false">Bài đọc 2</button>
+            <button class="study-tab" type="button" data-view="vocabulary" role="tab" aria-selected="false">20 từ mới</button>
+            <button class="study-tab" type="button" data-view="review" role="tab" aria-selected="false">Ôn lại</button>
+          </nav>
+
+          <div id="studyPanel" role="tabpanel"></div>
+        </div>
+
+        <div id="lookupView" class="hidden">
+          <div class="lookup-heading">
+            <div><p class="eyebrow">TỪ VỰNG</p><h1 id="lookupTitle">Tìm từ</h1><p id="lookupSummary"></p></div>
+            <button id="closeLookup" class="text-button" type="button">Trở về ngày học</button>
+          </div>
+          <label for="lookupInput" class="lookup-label">Nhập từ tiếng Anh hoặc nghĩa tiếng Việt</label>
+          <div class="lookup-input-wrap">
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8" stroke="currentColor" stroke-width="1.8"/><path d="m16 16 4.5 4.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+            <input id="lookupInput" type="search" autocomplete="off" placeholder="Ví dụ: meeting, hóa đơn…" />
+          </div>
+          <div id="lookupResults" class="lookup-results"></div>
+        </div>
+      </main>
+    </div>
+
+    <dialog id="wordDialog" class="word-dialog" aria-labelledby="dialogWord">
+      <div class="dialog-surface">
+        <div class="dialog-top">
+          <span class="eyebrow" id="dialogDay">TỪ VỰNG</span>
+          <button id="closeWordDialog" class="icon-button dialog-close" type="button" aria-label="Đóng"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 5 19 19M19 5 5 19" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>
+        </div>
+        <div class="dialog-word-heading">
+          <div><h2 id="dialogWord"></h2><p><span id="dialogPos"></span><span id="dialogIpa"></span></p></div>
+          <button id="dialogSpeak" class="speak-button" type="button" aria-label="Nghe phát âm từ"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4ZM17 8a6 6 0 0 1 0 8M19.5 5a10 10 0 0 1 0 14" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+        </div>
+        <p id="dialogMeaning" class="dialog-meaning"></p>
+        <h3>Ví dụ trong câu</h3>
+        <div id="dialogExamples" class="dialog-examples"></div>
+        <div class="dialog-actions">
+          <button id="dialogLearned" class="primary-button" type="button"></button>
+          <button id="dialogBookmark" class="secondary-button" type="button"></button>
+        </div>
+        <button id="dialogGoArticle" class="dialog-article-link" type="button"></button>
+      </div>
+    </dialog>
+
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  </body>
+</html>
